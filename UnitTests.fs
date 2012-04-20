@@ -27,12 +27,11 @@ module Tests =
     let complex7 = eval (If(Fun("x",Var "y"),Const 3,Const 4))
     let complexResult7 = Const 3
 
-    let hellWorld = App(mkFac, Const 5)
+    let hellWorld = App(expressionFactorial, Const 5)
     let complex8 = App(hellWorld, Const 5)
     let complexResult8 = Const 120
+
     
-    //printfn "%A" complex2
-    //Console.ReadKey();
 
     [<TestFixture>] 
     type ProjectTests() = 

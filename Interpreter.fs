@@ -18,7 +18,7 @@ module Interpreter =
         | Div of Expr * Expr
         | If of Expr * Expr * Expr
         | App of Expr * Expr
-        | Fix of Expr
+        | Y of Expr
         
     
     //our subtitute function
@@ -33,10 +33,7 @@ module Interpreter =
       | If(x', y', z') -> If(subst(x, v, x'), subst(x, v, y'), subst(x, v, z'))      
       | Fun(y', a') -> if x = y' then a else Fun(y', subst (x, v, a'))
       | App (x', y') -> App (subst(x, v, x'), subst(x, v, y'))
-     
     
-
-   
     // evaluator
     let rec eval(e: Expr) = match e with
         | Const c -> Const c
@@ -70,26 +67,30 @@ module Interpreter =
         | _ -> failwith "I could not match the patterns"
         
         
-    let rec Fix f x = f (Fix f) x
+    let rec Y f x = f (Y f) x
 
-    (* An usual factorial in F# would look like this
+    (* An usual factorial in F# would look like this *)
     let regularfactorial fact = function
         0 -> 1
         | x -> x * fact (x-1)
-    *)
-
+    
     //lets attempt to turn it into an expression syntax instead for our purpose
 
-    let mkFac = Fun("f", Fun("n", If(Var "n", Times(Var "n", App(Var "f", Minus(Var "n", Const 1))), Const 1)))
-    let a = App(mkFac, mkFac)
+    let expressionFactorial = Fun("f", Fun("n", If(Var "n", Times(Var "n", App(Var "f", Minus(Var "n", Const 1))), Const 1)))
+    
+    //some tests to prove regularFactorial is working
+    let factorial5 = Y regularfactorial 5
+    printfn "%A" factorial5
+    
+
+    
+    Console.ReadKey();
+    
+    
+
 
       
-    let five = Const 5
-    let test = App(Fun("x",Plus(Const 7,Var("x"))),Const 3)
     
-    
-    let hellWorld = App(mkFac, Const 5)
-    let Y = App(hellWorld, five)
 
     
 (*
