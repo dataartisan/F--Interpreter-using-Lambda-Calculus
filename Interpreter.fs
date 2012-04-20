@@ -18,6 +18,8 @@ module Interpreter =
         | Div of Expr * Expr
         | If of Expr * Expr * Expr
         | App of Expr * Expr
+        | Fix of Expr
+        
     
     //our subtitute function
     //Idea was acquired from the ML Interpreter
@@ -31,34 +33,34 @@ module Interpreter =
       | If(x', y', z') -> If(subst(x, v, x'), subst(x, v, y'), subst(x, v, z'))      
       | Fun(y', a') -> if x = y' then a else Fun(y', subst (x, v, a'))
       | App (x', y') -> App (subst(x, v, x'), subst(x, v, y'))
+     
+    
 
    
     // evaluator
     let rec eval(e: Expr) = match e with
         | Const c -> Const c
         | Bool(b) -> Bool(b)
-        //| Plus(e1, e2) -> eval (Plus(eval e1, eval e2))
         | Plus(e1, e2) -> match  (eval e1, eval e2) with
            | (Const x, Const y) -> Const(x + y)
            | (Const x, Var y) -> Const x
            | (Var x, Const y) -> Const y
-           | _ -> failwith "bad plus operation"
-        //| Plus(e1, e2) -> eval (Plus(eval e1, eval e2))
-        | Minus(x, y) -> match (eval x, eval y) with
+           | _ -> Plus(eval (e1), eval(e2))
+        | Minus(e1, e2) -> match (eval e1, eval e2) with
             | (Const x, Const y) -> Const(x - y)
             | (Const x, Var y) -> Const x
             | (Var x, Const y) -> Const y
-            | _ -> failwith "bad minus operation"
-        | Times(x, y) -> match (eval x, eval y) with
+            | _ -> Minus(eval (e1), eval(e2))
+        | Times(e1, e2) -> match (eval e1, eval e2) with
             | (Const x, Const y) -> Const(x * y)
             | (Const x, Var y) -> Const x
             | (Var x, Const y) -> Const y
-            | _ -> failwith "bad times operation"
-        | Div(x, y) -> match(eval x, eval y) with
+            | _ -> Times(eval (e1), eval(e2))
+        | Div(e1, e2) -> match(eval e1, eval e2) with
             | (Const x, Const y) -> Const(x / y)
             | (Const x, Var y) -> Const x
             | (Var x, Const y) -> Const y
-            | _ -> failwith "bad div operation"
+            | _ -> Times(eval (e1), eval(e2))
         | Var x -> failwith "error (* your eval function should no longer include a branch for Var  *)"
         | If (c, e1, e2) -> if eval c = Const 0 then eval e2 else eval e1
         | Fun(x, e1) -> Fun(x, e1)
@@ -68,28 +70,28 @@ module Interpreter =
         | _ -> failwith "I could not match the patterns"
         
         
-       
-    type 'a mu = Roll of ('a mu -> 'a)
- 
-    let unroll (Roll x) = x
-    
-    let fix f = (fun x a -> f (unroll x x) a) (Roll (fun x a -> f (unroll x x) a))
-    
-    let fac f = function
-        Const 0 -> Const 1
-        | Const (n) -> Const (n * f (n-1))
-        | _ -> Const 1
-    
-    let Y = fix fac (5)
-    //let Y = fix fact 0
-    let test = App(App(Y, Fun("f",Fun("n",If(Var "n",Times(Var "n",App(Var("f"),Minus(Var "n",Const 1))),Const 1)))), Const 5)
-    
-    //let e = App(Fun("x",Plus(Const 7, Var("x"))), Const 3)
-    let main = printfn "%A" (eval test)
-    
+    let rec Fix f x = f (Fix f) x
 
-    Console.ReadKey();
- 
+    (* An usual factorial in F# would look like this
+    let regularfactorial fact = function
+        0 -> 1
+        | x -> x * fact (x-1)
+    *)
+
+    //lets attempt to turn it into an expression syntax instead for our purpose
+
+    let mkFac = Fun("f", Fun("n", If(Var "n", Times(Var "n", App(Var "f", Minus(Var "n", Const 1))), Const 1)))
+    let a = App(mkFac, mkFac)
+
+      
+    let five = Const 5
+    let test = App(Fun("x",Plus(Const 7,Var("x"))),Const 3)
+    
+    
+    let hellWorld = App(mkFac, Const 5)
+    let Y = App(hellWorld, five)
+
+    
 (*
 let five = Const(5)
 let protofac = Lam("f", Lam("n", IfZero(Var("n"), Const(1), Times(Var("n"), App(App(Var("f"), Var("f")), Minus(Var("n"), Const(1)))))))
